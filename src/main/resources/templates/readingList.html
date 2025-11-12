@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reading List</title>
+    <link rel="stylesheet" th:href="@{/style.css}"/>
+</head>
+<body>
+    <h1>My Reading List</h1>
+
+    <ul>
+        <!-- Loop through books from the model -->
+        <li th:each="book : ${books}">
+            <strong th:text="${book.title}">Book Title</strong>
+            by <span th:text="${book.author}">Author</span>
+        </li>
+    </ul>
+
+    <form th:action="@{/readingList}" method="post">
+        <input type="text" name="title" placeholder="Title" required />
+        <input type="text" name="author" placeholder="Author" required />
+        <button type="submit">Add Book</button>
+    </form>
+</body>
+</html>
