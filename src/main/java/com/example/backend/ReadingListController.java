@@ -2,50 +2,85 @@ package com.example.backend;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import jakarta.validation.Valid;
 
 @Controller
 @RequestMapping("/readingList")
 public class ReadingListController {
 
-    private final ReadingListRepository readingListRepository;
+    private final ReadingListService readingListService;
 
-    public ReadingListController(ReadingListRepository readingListRepository) {
-        this.readingListRepository = readingListRepository;
+    public ReadingListController(ReadingListService readingListService) {
+        this.readingListService = readingListService;
     }
 
-    // Display all books
     @GetMapping
     public String getReadingList(Model model) {
-        model.addAttribute("books", readingListRepository.findAll());
-        return "readingList"; // Maps to readingList.html in templates
+        model.addAttribute("books", readingListService.findAll());
+        model.addAttribute("book", new Book());
+        return "readingList";
     }
 
-    // Add a new book
     @PostMapping
-    public String addToReadingList(Book book) {
-        readingListRepository.save(book);
-        return "redirect:/readingList"; // Redirect back to the list after saving
+    public String addToReadingList(@Valid Book book, BindingResult bindingResult, Model model) {
+        if (bindingResult.hasErrors()) {
+            model.addAttribute("books", readingListService.findAll());
+            model.addAttribute("errors", bindingResult.getAllErrors());
+            return "readingList";
+        }
+        readingListService.save(book);
+        return "redirect:/readingList";
     }
 
-    @PutMapping("readingList/{id}")
-    @ResponseBody
-    public Book updateBook(@PathVariable Long id, @RequestBody Book updatedBook) {
-        return readingListRepository.findById(id)
-                .map(book -> {
-                    book.setTitle(updatedBook.getTitle());
-                    book.setAuthor(updatedBook.getAuthor());
-                    book.setDescription(updatedBook.getDescription());
-                    book.setIsbn(updatedBook.getIsbn());
-                    book.setReader(updatedBook.getReader());
-                    return readingListRepository.save(book);
-                })
-                .orElseThrow(() -> new RuntimeException("Book not found with id " + id));
+    // NEW: Show edit form
+    @GetMapping("/{id}/edit")
+    public String editBookForm(@PathVariable Long id, Model model) {
+        try {
+            Book book = readingListService.findById(id)
+                    .orElseThrow(() -> new BookNotFoundException("Book not found with id " + id));
+            model.addAttribute("book", book);
+            return "editBook";
+        } catch (BookNotFoundException e) {
+            return "redirect:/readingList";
+        }
+    }
+
+    // NEW: Handle edit form submission
+    @PostMapping("/{id}/edit")
+    public String updateBook(@PathVariable Long id, @Valid Book book, BindingResult bindingResult,
+            Model model, RedirectAttributes redirectAttributes) {
+        if (bindingResult.hasErrors()) {
+            model.addAttribute("book", book);
+            model.addAttribute("errors", bindingResult.getAllErrors());
+            return "editBook";
+        }
+
+        try {
+            readingListService.updateBook(id, book);
+            redirectAttributes.addFlashAttribute("successMessage", "Book updated successfully!");
+        } catch (BookNotFoundException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+        return "redirect:/readingList";
+    }
+
+    @PostMapping("/{id}/delete")
+    public String deleteBook(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        try {
+            readingListService.deleteById(id);
+            redirectAttributes.addFlashAttribute("successMessage", "Book deleted successfully!");
+        } catch (BookNotFoundException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "An error occurred while deleting the book");
+            e.printStackTrace();
+        }
+        return "redirect:/readingList";
     }
 }

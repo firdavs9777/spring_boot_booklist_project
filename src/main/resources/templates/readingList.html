@@ -1,26 +1,209 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reading List</title>
-    <link rel="stylesheet" th:href="@{/style.css}"/>
-</head>
-<body>
-    <h1>My Reading List</h1>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Reading List</title>
+    <link rel="stylesheet" th:href="@{/style.css}" />
+  </head>
+  <body>
+    <div class="container">
+      <!-- Header -->
+      <header class="header">
+        <div class="header-content">
+          <h1>📚 My Reading List</h1>
+          <div class="user-actions">
+            <!-- Placeholder for authentication -->
+            <span class="username">Welcome, User</span>
+            <button class="btn-secondary">Logout</button>
+          </div>
+        </div>
+      </header>
 
-    <ul>
-        <!-- Loop through books from the model -->
-        <li th:each="book : ${books}">
-            <strong th:text="${book.title}">Book Title</strong>
-            by <span th:text="${book.author}">Author</span>
-        </li>
-    </ul>
+      <!-- Main Content -->
+      <main class="main-content">
 
-    <form th:action="@{/readingList}" method="post">
-        <input type="text" name="title" placeholder="Title" required />
-        <input type="text" name="author" placeholder="Author" required />
-        <button type="submit">Add Book</button>
-    </form>
-</body>
+       <div th:if="${successMessage}" class="alert alert-success">
+        ✅ <span th:text="${successMessage}"></span>
+    </div>
+    
+    <!-- Error Message -->
+    <div th:if="${errorMessage}" class="alert alert-error">
+        ❌ <span th:text="${errorMessage}"></span>
+    </div>
+        <!-- Add Book Section -->
+        <section class="add-book-section">
+          <h2>Add New Book</h2>
+
+          <!-- Validation Errors -->
+          <div
+            th:if="${errors != null and !errors.isEmpty()}"
+            class="alert alert-error"
+          >
+            <strong>⚠️ Please fix the following errors:</strong>
+            <ul>
+              <li
+                th:each="error : ${errors}"
+                th:text="${error.defaultMessage}"
+              ></li>
+            </ul>
+          </div>
+
+          <!-- Add Book Form -->
+          <form th:action="@{/readingList}" method="post" class="book-form">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="title">Title *</label>
+                <input
+                  type="text"
+                  id="title"
+                  name="title"
+                  placeholder="Enter book title"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="author">Author *</label>
+                <input
+                  type="text"
+                  id="author"
+                  name="author"
+                  placeholder="Enter author name"
+                  required
+                />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="isbn">ISBN</label>
+                <input
+                  type="text"
+                  id="isbn"
+                  name="isbn"
+                  placeholder="ISBN (optional)"
+                />
+              </div>
+              <div class="form-group">
+                <label for="reader">Reader</label>
+                <input
+                  type="text"
+                  id="reader"
+                  name="reader"
+                  placeholder="Reader name (optional)"
+                />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="description">Description</label>
+              <textarea
+                id="description"
+                name="description"
+                placeholder="Brief description of the book (optional)"
+                rows="3"
+              ></textarea>
+            </div>
+
+            <button type="submit" class="btn-primary">
+              <span>➕</span> Add Book
+            </button>
+          </form>
+        </section>
+
+        <!-- Books List Section -->
+        <section class="books-section">
+          <div class="section-header">
+            <h2>Your Books</h2>
+            <span
+              class="book-count"
+              th:if="${books != null}"
+              th:text="${books.size()} + ' books'"
+              >0 books</span
+            >
+          </div>
+
+          <!-- Empty State -->
+          <div th:if="${books == null or books.isEmpty()}" class="empty-state">
+            <div class="empty-icon">📖</div>
+            <h3>No books yet</h3>
+            <p>
+              Start building your reading list by adding your first book above!
+            </p>
+          </div>
+
+          <!-- Books Grid -->
+          <div th:if="${books != null and !books.isEmpty()}" class="books-grid">
+            <div th:each="book : ${books}" class="book-card">
+              <div class="book-card-header">
+                <h3 th:text="${book.title}">Book Title</h3>
+                <span class="book-author" th:text="'by ' + ${book.author}"
+                  >by Author</span
+                >
+              </div>
+
+              <div class="book-card-body">
+                <p
+                  th:if="${book.description != null and !book.description.isEmpty()}"
+                  class="book-description"
+                  th:text="${book.description}"
+                >
+                  Description
+                </p>
+                <p
+                  th:if="${book.description == null or book.description.isEmpty()}"
+                  class="book-description-empty"
+                >
+                  No description available
+                </p>
+              </div>
+
+              <div class="book-card-footer">
+                <div class="book-meta">
+                  <span
+                    th:if="${book.isbn != null and !book.isbn.isEmpty()}"
+                    class="meta-item"
+                  >
+                    📘 <span th:text="${book.isbn}">ISBN</span>
+                  </span>
+                  <span
+                    th:if="${book.reader != null and !book.reader.isEmpty()}"
+                    class="meta-item"
+                  >
+                    👤 <span th:text="${book.reader}">Reader</span>
+                  </span>
+                </div>
+
+                <div class="book-actions">
+                 <a th:href="@{/readingList/{id}/edit(id=${book.id})}" class="btn-edit" style="text-decoration: none;">
+        ✏️ Edit
+    </a>
+                  <form
+                    th:action="@{'/readingList/' + ${book.id} + '/delete'}"
+                    method="post"
+                    style="display: inline"
+                  >
+                    <button
+                      type="submit"
+                      class="btn-delete"
+                      onclick="return confirm('Are you sure you want to delete this book?')"
+                    >
+                      🗑️ Delete
+                    </button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <!-- Footer -->
+      <footer class="footer">
+        <p>© 2025 Reading List App | Built with Spring Boot & Thymeleaf</p>
+      </footer>
+    </div>
+
+    <script th:src="@{/script.js}"></script>
+  </body>
 </html>

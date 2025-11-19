@@ -4,6 +4,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 @Entity
 public class Book {
@@ -12,10 +14,21 @@ public class Book {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
+    @Size(max = 20, message = "ISBN must not exceed 20 characters")
     private String isbn;
+    
+    @Size(max = 100, message = "Reader name must not exceed 100 characters")
     private String reader;
+    
+    @NotBlank(message = "Title is required")
+    @Size(max = 200, message = "Title must not exceed 200 characters")
     private String title;
+    
+    @NotBlank(message = "Author is required")
+    @Size(max = 100, message = "Author name must not exceed 100 characters")
     private String author;
+    
+    @Size(max = 1000, message = "Description must not exceed 1000 characters")
     private String description;
 
     // Default constructor (required by JPA)
